@@ -1,4 +1,4 @@
-### A/B Testing of Scanner Experiment
+### A/B Testing of Udacity Screener Experiment
 
 ### Experiment Design
 
