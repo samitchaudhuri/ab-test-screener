@@ -118,13 +118,13 @@ we chose not to include it for reasons explained below.
 * Number of user-ids: That is, number of users who enroll in the free
   trial. (d<sub>min</sub>=50)
 
-Since the experiment uses number of cookies as unit of diversion it is
-hard to ensure that the experiment and control groups contain similar
-number of users. Therefore, the above metric is not well defined; even
-if enrollment goes down, we cannot tell if the difference is caused
-due to the screener or due to a smaller number of users in the
-experiment group.
+This could potentially be an evaluation metric. However, it not normalized, so its accuracy will be impacted by any size difference between the control and experiment groups. Even if the experiment tries to effect even distribution between experiment and control and uses sanity checks to verify that, it is possible to get some skew and even a small difference in group size can impact accuracy. Gross conversion, which  normalizes by cookies, is a better evaluation metric to use.
 
+In summary, we have chosen 3 evaluation metrics to test the two parts of the original hypothesis as follows:
+
+1. we can tell if the screener reduced the number who left the free trial early by observing a decrease in the gross conversion metric, OR by an increase in the retention metric, AND
+
+2. we can tell if the screener did not significantly reduce the number of studentents by observing no significant change in the net conversion metric. 
 
 ### Measuring Standard Deviation
 
@@ -148,15 +148,14 @@ sample of the following historical data collected prior to experiment.
 From a smaple size of 5000 cookies visiting the course overview page,
 we compute the estimated probability p<sup>^</sup>, and then use it to
 compute the Standard Error (SE), which is an estimate the Standard
-Deviation [&stddevrblog], using the following formula
+Deviation [\[stddevrblog\]][&stddevrblog], using the following formula
 
 <img class="displayed" src="assets/images/stddev_formula.png" width="125px" height="auto">
 
 In the above formula the sample size N is measured in units of
 analysis which is different for different metrics:
 
-1. For gross and net conversion, unit of analysis is the number of
-pageviews, and there are 400 (3200 x 5000 / 40000) units in the
+1. For gross and net conversion, unit of analysis is the number unique cookies, and there are 400 (3200 x 5000 / 40000) units in the
 sample. For N=5000, the standard deviations of gross conversion and
 net conversion are 0.0202 and 0.156 respectively.
 
@@ -164,17 +163,19 @@ net conversion are 0.0202 and 0.156 respectively.
 there are 82.5 (660 x 5000 / 40000) units in the sample. For N=82.5,
 the standard deviation of retention is 0.53.
 
-The analytical estimates of variance presented above assume that the
-underlying data for each metric follow Binomial Distribution. This
-assumption holds because all the evaluation metrics measure success
+In order to be valid, the analytical estimates must satisfy the following conditions: 
+
+1. Underlying data for each metric follow binomial Distribution. This assumption holds because all of the evaluation metrics measure success
 probabilities of two-outome events, where events are independent and
-have identical probability distributions. Additionally the sample size
-and probabilities in each case also satisfy the Normal approximation
-condition: Np<sup>^</sup> > 5 and N(1-p<sup>^</sup>)>5.
+have identical probability distributions. 
+
+2. Unit of analysis, i.e., the denominator of the metric, is the same as the unit of diversion used in the experiment (number of unique cookies). While this is true for gross and net conversion, it is not true for retention. Therefore analytical estimates can only be used for gross and net conversion, and not for retention.
+
+Additionally the sample size and probabilities in each case also satisfy the Normal approximation condition: Np<sup>^</sup> > 5 and N(1-p<sup>^</sup>)>5.
 
 Although, under ideal conditions, analytical variability estimates of
-gross conversion and retention metrics are valid, they can
-significantly underestimate the empirical variance when the experiment
+gross and net conversion metrics are valid, they can
+still significantly underestimate the empirical variance when the experiment
 system is less than ideal and has issues regarding randomization,
 bias, or population effects etc. In such cases, it is safer to perform
 A vs A experiments as a sanity check for the experiment system. A vs A
@@ -261,11 +262,14 @@ for our experiment.
 
 #### Duration vs. Exposure
 
-Assuming there are no other experiments going on, it is safe to divert
-the entire traffic to this experiment becasue the experiment does not
-collect any private data, and does not leave any permanent
-footprint. Hence we chose to divert 100% of the traffic to this
-experiment.
+Before we can determine how much traffic to divert to the experiment and for how long, we need to establish the 4 main principles used by IRB (Instritutional Review Board) to ensure that participants are adequately protected: 
+
+1. The experipent does not pose any **risk** to the participants; exposure to the screener does not cause any permanent harm. Even if the screener is not eventually launched, the users in either the control or the experiment group do not get hurt because of the duration of the experiment.
+2. Participants can potentially **benefit** from the experiment. If the hypothesis holds and the screener is launched, it will reduce the number of frustrated users who would have otherwise wasted time taking the free trial.  
+3. Particpants have a **choice** to not use the Udacity and instead use other online courses. They are not coerced into participating in the experiment.
+4. The experiment does not compromise the **privacy** of the participants. It only anonymously collects information on number of hours the participant can devote to the course. Neither does it collect any data on private issues such as political attitudes, personal disease history, or sexual preferences, nor does it leave any permanent footprint.
+
+Since the experiment is safe and ethical, and assuming there are no other experiments going on, we can divert 100% of the traffic to this experiment.
 
 At the rate of 40000 page view per day, it will require 18 days to
 collect 685325 page views from 100% of the traffic. This is a
@@ -399,14 +403,11 @@ d<sup>^</sup> as [d<sup>^</sup>-m, d<sup>^</sup>+m]
 A metric is statistically significant if the confidence interval does
 not include 0 (we can be confident there was a change), and it is
 practically significant if the confidence interval does not overlap
-with the practical significance interval [-d<sub>min</sub>,
-d<sub>min</sub>] (we can be confident there is a change that matters
+with the practical significance interval \[-d<sub>min</sub>,
+d<sub>min</sub>\] (we can be confident there is a change that matters
 to the business.)
 
-Although we have two evaluation metrics, we expect to see a change in
-one of them, and no change in the other. Combining these metrics does
-not necessarily increase the probability of false positives of the
-combined metrics, therefore we avoided the Bobferroni correction.
+Here we have two evaluation metrics, and we expect *both* the metrics to match the expectations. This increases the risk of *false negatives* (type II error) [\[typeerrors\]][&typeerrors] because we risk not to launch even if one of the metrics produces a false negative. We cannot, however, use Bonferroni correction here, because it only helps mitigate risk of *false positives* (type I error) in case where *any* metric needs to match the expections in order to lauch [\[multtest\]][&multtest][\[utbonferroni\]][&utbonferroni][\[wonlinebf\]][&wonlinebf].
 
 The following table summarizes the results. Here we note that although
 the data was collected from Oct 11 through Nov 16, the evaluation
@@ -416,8 +417,8 @@ estimates were calculated using data till Nov 2, and the data from Nov
 
 | Metric | Exp-Control | m | Lower | Upper |  d<sub>min</sub> | SSig | PSig |  
 |--------|-------------|---|-------|-------|------------------|------|------|
-| Gross Conversion | -0.0206 | 0.00086 | -0.0291 | -0.0120 | | 0.1 | Y,Y |
-| Net Conversion | -0.0049 | 0.0067 | -0.0116 | 0.0119 | 0.1 | N,N|
+| Gross Conversion | -0.0206 | 0.00086 | -0.0291 | -0.0120 |0.1 | Y | Y |
+| Net Conversion | -0.0049 | 0.0067 | -0.0116 | 0.0019 | 0.0075 | N | N |
 
 
 #### Sign Tests
@@ -438,7 +439,7 @@ So the question is if you flip a fair coin 23 times, what is the
 chance it comes up heads 19 times ? Here the number of days is high
 enough for the binomial to approximate a normal distribution
 (Np<sup>^</sup> > 5 and N(1-p<sup>^</sup>)>5). However, we can also
-use the online calculator at [\[quickcalcs\]][&quickcalcs] to compute
+use the online calculator at [\[graphcalc\]][&graphcalc] to compute
 the two-tailed P value for probability density of the binomial
 distribution as 0.0026. That's the probability of observing a result
 at least this extreme by chance.  Since this is less than the chosen
@@ -467,7 +468,7 @@ We have designed and performed an experiment to check the effect of
 adding a screener before letting the users start a free trial. A
 cookie was used as the unit of diversion. We started with properly
 chosing a set of invariant metrics, and a set of evaluation metrics,
-and . , checked their variability. We sized the experiment to have
+and checked their variability. We sized the experiment to have
 enough statistical power for &alpha;=0.5 and &beta;=0.2, and
 determined that the experiement can be performend on the entire
 traffic over a duration of about 18 days. We did a sanity check on the
@@ -486,13 +487,14 @@ unlikely to come about by chance.
 We understand that the free-trial screener might set clearer
 expectations for students upfront and reduce the number of frustrated
 students who left the free trial because they didn't have enough time
-to commit to the course.
+to commit to the course. 
 
-Results of our experiment are both statistically and practically
-significant on all metrics. Additional sign test on the day-by-day
-data agrees with the hypothesis test, so these results are unlikely to
-occur by chance. This gives us increased confidence in the experiment
-results.
+We need both the evaluation metrics, gross and net conversions, to match expectations in order to launch. From the analysis presented above we find
+
+1. The gross conversion metric matches our expectation because there is both a statistically and practically significant reduction in overall gross convertion. Additional sign test on day-by-day data shows reduction in gross convertion in a statistically signficant proportion of days. This gives us increased confidence that the experiment results matches our expectations.
+2. The change in net conversion is less straightforward. The confidence interval around the observed difference includes the negative of the practical-significance boundary; hence it is possible that this metric went down by an amount that might matter to the business. However, the confidence interval also includes 0, and hence the observed difference is not statistically significant. So we cannot show with certainty that net conversion has actually decreased. Additional sign test on day-by-day data also confirms that net convertion neither increased nor decreased in a statistically signficant proportion of days. Although repeating this experiment with greater power will give additional confidence in the results, we will make our judgement based on the second part of the hypothesis: "without significantly reducing the number of students", and conclude that the net conversion metric also matches our expectation. 
+
+Since both metrics match our expectation, we recommend a launch. 
 
 At the end it is not just about statistical evidence; the end goal is
 to actually make recommendation that demonstrates our judgment with
@@ -506,7 +508,7 @@ extra screener for all users, we don't expect any unusual impact on a
 specific slice of users, and neither do we expect a high deployment
 cost.
 
-Although the initial effect is statically significant, they can
+Even when the initial effect is statistically significant, they can
 disappear due to *learning effects* when the users start adapting to a
 change or not. When users first see a change, they tend to react in
 one of these two ways causing two different types of effects: *change
@@ -551,13 +553,26 @@ practical significance boundary; e.g. d<sub>min</sub>=0.125.
 
 [\[graphcalc\] QuickCalcs: Sign and Binomial Test] [&graphcalc]
 
-[\[stddevrblog\]: Standard Deviation vs Standard Error] [&stddevrblog]
+[\[stddevrblog\] Standard Deviation vs Standard Error] [&stddevrblog]
+
+[\[typeerrors\] What are type I and type II errors ?] [&typeerrors]
+
+[\[multtest\] Why is Multiple Testign a Problem] [&multtest]
+
+[\[utbonferroni\] The Bonferonni and Šidák Corrections for Multiple Comparisons] [&utbonferroni]
+
+[\[wonlinebf\] When to use the Bonferroni Correction] [&wonlinebf]
+
 
 [&gitRepo]: https://github.com/samitchaudhuri/ab-test-screener "A/B Test Free Trial Screener"
 [&screenshot]: https://drive.google.com/file/d/0ByAfiG8HpNUMakVrS0s4cGN2TjQ/view "Screen Shot of Screener"
 [&onlinecalc]: http://www.evanmiller.org/ab-testing/sample-size.html "How many subjects are needed for an A/B test ?"
 [&graphcalc]: http://graphpad.com/quickcalcs/binomial1.cfm "QuickCalcs: Sign and Binomial Test"
 [&stddevrblog]: https://www.r-bloggers.com/standard-deviation-vs-standard-error/ "Standard Deviation vs Standard Error"
+[&typeerrors]: http://support.minitab.com/en-us/minitab/17/topic-library/basic-statistics-and-graphs/hypothesis-tests/basics/type-i-and-type-ii-error/ "What are type I and type II errors ?"
+[&multtest]: http://www.stat.berkeley.edu/~mgoldman/Section0402.pdf "Why is Multiple Testign a Problem"
+[&utbonferroni]: http://www.utdallas.edu/~herve/Abdi-Bonferroni2007-pretty.pdf "The Bonferonni and Šidák Corrections for Multiple Comparisons"
+[&wonlinebf]: http://onlinelibrary.wiley.com/doi/10.1111/opo.12131/full "When to use the Bonferroni Correction"
 
 
 
