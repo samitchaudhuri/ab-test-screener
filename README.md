@@ -111,8 +111,7 @@ Although both metrics measure the same effect, we would want to
 eventually settle on a single metric because composite metrics are
 tricky and hard to agree on. While net conversion uses "cookies to
 click" as unit of diversion, retention uses "users to enroll", which
-is a much larger unit. Therefore, to detect the same minimum effect
-(d<sub>min</sub>) of 0.1, the retention metric requires more pageviews to get enough enrollments to reach the designated statistical power. 
+is a much larger unit. Therefore the retention metric requires more pageviews to get enough enrollments to reach the designated statistical power. 
 We will know more about this in later sections after we have performed some more calculations.
 
 In summary, we have chosen 3 evaluation metrics to test the two parts of the original hypothesis as follows:
