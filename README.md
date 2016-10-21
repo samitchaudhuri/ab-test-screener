@@ -89,42 +89,37 @@ d<sub>min</sub> is indicated in parantheses.
   and enroll in the free trial divided by number of unique cookies to
   click the "Start free trial" button. (d<sub>min</sub>= 0.01)
 
+* Number of user-ids: That is, number of users who enroll in the free
+  trial. (d<sub>min</sub>=50)
+
+Although both metrics measure the same effect, number of user-ids not normalized, so its accuracy is impacted by any size difference between the control and experiment groups. Even if the experiment tries to effect even distribution between experiment and control and uses sanity checks to verify it, it is possible to get some skew in group sizes that will impact accuracy. Gross conversion, which  normalizes by cookies, is a better evaluation metric to use.
+
+A separate set of metrics are needed to test that the screener does not
+significantly reduce the number of users that continue past the free
+trial and pay. The following metrics should be required not to decrease outside the bounds of statistical variability.
+
 * Retention: That is, number of user-ids to remain enrolled past the
   14-day boundary (and thus make at least one payment) divided by
   number of user-ids to complete checkout. (d<sub>min</sub>=0.01)
-
-Although both metrics measure the same effect, we would want to
-eventually settle on a single metric because composite metrics are
-tricky and hard to agree on. While gross conversion uses "cookies to
-click" as unit of diversion, retention uses "users to enroll", which
-is a much larger unit. Therefore, to detect the same minimum effect
-(d<sub>min</sub>) of 0.1, the retention metric will probably require more
-statistical power than gross conversion. We will know more about this
-in later sections after we have performed some more calculations.
-
-A separate metric is needed to test that the screener does not
-significantly reduce the number of users that continue past the free
-trial and pay. The following metric is expected to produce similar
-values within bounds of statistical variability.
-
+  
 * Net conversion: That is, number of user-ids to remain enrolled past
   the 14-day boundary (and thus make at least one payment) divided by
   the number of unique cookies to click the "Start free trial"
   button. (d<sub>min</sub>= 0.0075)
 
-Note that even though the following metric is affected by the screener
-we chose not to include it for reasons explained below.
-
-* Number of user-ids: That is, number of users who enroll in the free
-  trial. (d<sub>min</sub>=50)
-
-This could potentially be an evaluation metric. However, it not normalized, so its accuracy will be impacted by any size difference between the control and experiment groups. Even if the experiment tries to effect even distribution between experiment and control and uses sanity checks to verify that, it is possible to get some skew and even a small difference in group size can impact accuracy. Gross conversion, which  normalizes by cookies, is a better evaluation metric to use.
+Although both metrics measure the same effect, we would want to
+eventually settle on a single metric because composite metrics are
+tricky and hard to agree on. While net conversion uses "cookies to
+click" as unit of diversion, retention uses "users to enroll", which
+is a much larger unit. Therefore, to detect the same minimum effect
+(d<sub>min</sub>) of 0.1, the retention metric requires more pageviews to get enough enrollments to reach the designated statistical power. 
+We will know more about this in later sections after we have performed some more calculations.
 
 In summary, we have chosen 3 evaluation metrics to test the two parts of the original hypothesis as follows:
 
-1. we can tell if the screener reduced the number who left the free trial early by observing a decrease in the gross conversion metric, OR by an increase in the retention metric, AND
+1. we can tell if the screener reduced the number who left the free trial early by observing a decrease in the gross conversion metric, AND
 
-2. we can tell if the screener did not significantly reduce the number of studentents by observing no significant change in the net conversion metric. 
+2. we can tell if the screener did not significantly reduce the number of students by observing no significant decrease in the retention AND in the net conversion metrics. 
 
 ### Measuring Standard Deviation
 
@@ -135,7 +130,7 @@ have too much variability to be appropriate for the experiment.
 For this we make analytical estimates of the standard deviation from a
 sample of the following historical data collected prior to experiment.
 
-| Metric | Value |
+| Metric | Baseline Value |
 |--------|---------|
 | Unique cookies to view page per day | 40000 |
 | Unique cookies to click "Start Free Trial" button per day | 3200 |
@@ -156,12 +151,12 @@ In the above formula the sample size N is measured in units of
 analysis which is different for different metrics:
 
 1. For gross and net conversion, unit of analysis is the number unique cookies, and there are 400 (3200 x 5000 / 40000) units in the
-sample. For N=5000, the standard deviations of gross conversion and
+sample. For N=5000, the standard errors of gross conversion and
 net conversion are 0.0202 and 0.156 respectively.
 
 2. For retention, unit of analysis is the number of enrollments, and
 there are 82.5 (660 x 5000 / 40000) units in the sample. For N=82.5,
-the standard deviation of retention is 0.53.
+the standard error of retention is 0.0549.
 
 In order to be valid, the analytical estimates must satisfy the following conditions: 
 
@@ -232,13 +227,8 @@ multiply the result with 2
 
 4. Take the maximum numer of pageviews over all the metrics.
 
-Combining multiple metrics increases the probability of false
-positives, because any metric producing a false positive causes the
-combined metric to produce a false positive. A coservative approach is
-to apply the Bonferroni correction (divide &alpha; by the number of
-metrics) while sizing. However, since the metrics are highly
-correlated, the Bonferroni method would have been too
-conservative. Hence we avoided the Bobferroni correction.
+Although we have three evaluation metrics, we expect *all* of the metrics to match the expectations. This only increases the risk of *false negatives* (type II error) [\[typeerrors\]][&typeerrors] because we risk not to launch even if one of the metrics produces a false negative. He do not use Bonferroni correction (divide &alpha; by the number of
+metrics) here, because it only helps mitigate risk of *false positives* (type I error) in case where *any* metric needs to match the expections in order to lauch [\[multtest\]][&multtest][\[utbonferroni\]][&utbonferroni][\[wonlinebf\]][&wonlinebf].
 
 
 | Metric | Baseline | d<sub>min</sub>|Size in Unit of Analysis | Size in Unit of diversion |
@@ -475,12 +465,7 @@ traffic over a duration of about 18 days. We did a sanity check on the
 results and found that the invariant metrics resutls are comparable
 between the two groups. We also found that although the experiment
 group showed a statistically and practically significant reduction in
-the gross conversion rate, there was no significant change in the net
-conversion rate. Even though we used both gross and net conversions as
-evaluation metrics, we did not use the Bonferroni correction, becuase
-these metrics are highly correlated. Since a sign test on the
-day-by-day data agree with the hypothesis test, this result was
-unlikely to come about by chance.
+the gross conversion rate, we could not establish, with certainity, a significant reduction in the net conversion rate. Since we need both the evaluation metrics, gross and net conversions, to meet expectations before launching, we did not use the Bonferroni correction which only applies to cases that only need *any* of the metrics to match expectations. Since a sign test on the day-by-day data agree with the hypothesis test, this result was unlikely to come about by chance.
 
 ### Recommendation
 
@@ -491,10 +476,11 @@ to commit to the course.
 
 We need both the evaluation metrics, gross and net conversions, to match expectations in order to launch. From the analysis presented above we find
 
-1. The gross conversion metric matches our expectation because there is both a statistically and practically significant reduction in overall gross convertion. Additional sign test on day-by-day data shows reduction in gross convertion in a statistically signficant proportion of days. This gives us increased confidence that the experiment results matches our expectations.
-2. The change in net conversion is less straightforward. The confidence interval around the observed difference includes the negative of the practical-significance boundary; hence it is possible that this metric went down by an amount that might matter to the business. However, the confidence interval also includes 0, and hence the observed difference is not statistically significant. So we cannot show with certainty that net conversion has actually decreased. Additional sign test on day-by-day data also confirms that net convertion neither increased nor decreased in a statistically signficant proportion of days. Although repeating this experiment with greater power will give additional confidence in the results, we will make our judgement based on the second part of the hypothesis: "without significantly reducing the number of students", and conclude that the net conversion metric also matches our expectation. 
+1. The gross conversion metric matches our expectation because there is both a statistically and practically significant reduction in overall gross convertion. Additional sign test on day-by-day data also shows reduction in gross convertion in a statistically signficant proportion of days. This gives us increased confidence that the experiment results match our expectations.
 
-Since both metrics match our expectation, we recommend a launch. 
+2. The change in net conversion is less straightforward. The confidence interval around the observed difference includes the negative of the practical-significance boundary; hence it is possible that this metric went down by an amount that might matter to the business. However, the confidence interval also includes 0, and hence the observed difference is not statistically significant. So we cannot be certain if this decrease it repeatable; especially so when a sign test on the day-by-day data also confirms that net convertion neither increased nor decreased in a statistically signficant proportion of days. However, we can't really use this evidence with real statistical confidence, for which we need to repeat this experiment with greater statistical power. Until then we cannot entirely dismiss a reduction in net conversion and consequently a negative financial impact. This would not meet the expectations of a risk-averse stake holder.
+
+Since one metric matches our expectation, and the other one does not, we cannot recommend a launch. We recomment repeating the experiment with greater statistical power to reach a more definite conclusion on net conversion. 
 
 At the end it is not just about statistical evidence; the end goal is
 to actually make recommendation that demonstrates our judgment with
